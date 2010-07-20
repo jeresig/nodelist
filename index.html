@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+  <title>NodeList Test Suite</title>
+  <style type="text/css">
+    body { margin: 10px; padding: 10px; color: red; font-family: sans-serif }
+    div.header { background-color: #e0e0e0; color: black; padding: 10px; margin-bottom: 10px;}
+
+    .unitTest { width: 10px; background-color: red; color: red; margin: 0px; margin-right: 2px; float: left; }
+    .test { margin-bottom: 2px; background-color: green; color: green; }
+
+    h1, p { width: 500px; color: #000; }
+    a { color: #000; }
+    #results { background: #FFF; width: 600px; padding: 10px 40px; color: #000; font-size: 11px; line-height: 1.3em; }
+
+    html { background-color: red; }
+    html.nopass .pass { display: none; }
+  </style>
+  <script src="nodelist.js"></script>
+  <script>
+	window.onload = function(){
+		document.getElementById("toggle").onclick = function(){
+			document.documentElement.className = this.checked ? "unitTest nopass" : "unitTest";
+		};
+
+		var insert = document.getElementById("results");
+		var results = [];
+		var tests = 0, passed = 0;
+		
+		var emptyNodeList = document.createElement("div").childNodes,
+			emptyCollection = document.createElement("div").children;
+			
+		var div = document.createElement("div"),
+			elem = document.createElement("div"),
+			elem2 = document.createElement("span");
+		
+		var e11 = document.createElement("a"),
+			e12 = document.createElement("b"),
+			e21 = document.createElement("a");
+			
+		elem.appendChild( e11 );
+		elem.appendChild( e12 );
+		elem2.appendChild( e21 );
+	
+		div.appendChild( elem );
+		div.appendChild( elem2 );
+		
+		var nodeList = div.childNodes,
+			collection = div.children;
+		
+		group("nodeType", function() {
+			// Test NodeList nodeType
+			assert( typeof Node.NODELIST_NODE === "number", "Make sure there is a Node.NODELIST_NODE node type to reference." );
+			assert( emptyNodeList.nodeType === Node.NODELIST_NODE, "Verify that a NodeList has a nodeType." );
+			assert( emptyCollection.nodeType === Node.NODELIST_NODE, "Verify that a HTMLCollection has a nodeType." );
+		});
+
+		group("createNodeList", function() {
+			testNodeList( "Document", document );
+			testNodeList( "NodeList", emptyNodeList );
+		});
+
+		function testNodeList( type, root ) {
+			// Test Basic Properties
+			assert( !!root.createNodeList, type + ".createNodeList exists." );
+			assert( typeof root.createNodeList === "function", type + ".createNodeList is a function." );
+			
+			var pass, list;
+			
+			// Test that incorrect arguments are rejected
+			group("Incorrect Arguments", function() {
+				var incorrect = {
+					"undefined": undefined,
+					"null": null,
+					"string": "string",
+					"boolean": true,
+					"number": 5,
+					"object": {},
+					"function": function(){}
+				};
+			
+				for ( var name in incorrect ) {
+					pass = false;
+				
+					try {
+						root.createNodeList( incorrect[name] );
+					} catch(e){
+						pass = true;
+					}
+				
+					assert( pass, type + ".createNodeList(" + name + ") should fail" );
+				}
+			});
+			
+			// Test NodeLists that have no contents
+			group("Empty", function() {
+				var empty = {
+					"": undefined,
+					"array": [],
+					"object": {length: 0},
+					"NodeList": emptyNodeList,
+					"HTMLCollection": emptyCollection
+				};
+			
+				checkNodeList( type, empty, [] );
+			});
+
+			// Test NodeLists that have one element
+			group("One Element", function() {
+				var div = document.createElement("div"),
+					elem = document.createElement("span");
+			
+				div.appendChild( elem );
+			
+				var one = {
+					"array": [ elem ],
+					"object": { "0": elem, length: 1 },
+					"NodeList": div.childNodes,
+					"HTMLCollection": div.children
+				};
+			
+				checkNodeList( type, one, [ elem ] );
+			});
+
+			// Test NodeLists that have multiple elements
+			group("Multiple Elements", function() {			
+				var multi = {
+					"array": [ elem, elem2 ],
+					"object": { "0": elem, "1": elem2, length: 2 },
+					"NodeList": nodeList,
+					"HTMLCollection": collection
+				};
+			
+				checkNodeList( type, multi, [ elem, elem2 ] );
+			});
+			
+			// Test NodeLists that have multiple unsorted elements
+			group("Multiple Unsorted Elements", function() {
+				var div = document.createElement("div"),
+					elem = document.createElement("div"),
+					elem2 = document.createElement("span");
+			
+				div.appendChild( elem );
+				div.appendChild( elem2 );
+			
+				var multi = {
+					"array": [ elem2, elem ],
+					"object": { "0": elem2, "1": elem, length: 2 }
+				};
+			
+				checkNodeList( type, multi, [ elem, elem2 ] );
+			});
+			
+			// Test NodeLists that have multiple unsorted elements and duplicates
+			group("Multiple Unsorted Elements with Duplicates", function() {
+				var div = document.createElement("div"),
+					elem = document.createElement("div"),
+					elem2 = document.createElement("span");
+			
+				div.appendChild( elem );
+				div.appendChild( elem2 );
+			
+				var multi = {
+					"array": [ elem2, elem, elem2, elem ],
+					"object": { "0": elem2, "1": elem, "2": elem2, "3": elem, length: 4 }
+				};
+			
+				checkNodeList( type, multi, [ elem, elem2 ] );
+			});
+			
+			// Test NodeLists that have one text node
+			group("One Text Node", function() {
+				var div = document.createElement("div"),
+					elem = document.createTextNode("test");
+			
+				div.appendChild( elem );
+			
+				var one = {
+					"array": [ elem ],
+					"object": { "0": elem, length: 1 },
+					"NodeList": div.childNodes
+				};
+			
+				checkNodeList( type, one, [ elem ] );
+			});
+			
+			// Test NodeLists that have mixed elements and text nodes
+			group("Multiple Elements and Text Nodes", function() {
+				var div = document.createElement("div"),
+					elem = document.createElement("span"),
+					elem2 = document.createTextNode("test2");
+			
+				div.appendChild( elem );
+				div.appendChild( elem2 );
+			
+				var multi = {
+					"array": [ elem, elem2 ],
+					"object": { "0": elem, "1": elem2, length: 2 },
+					"NodeList": div.childNodes
+				};
+			
+				checkNodeList( type, multi, [ elem, elem2 ] );
+			});
+			
+			// Test NodeLists that have unsorted elements and text nodes
+			group("Multiple Unsorted Elements and Text Nodes", function() {
+				var div = document.createElement("div"),
+					elem = document.createElement("span"),
+					elem2 = document.createTextNode("test2");
+			
+				div.appendChild( elem );
+				div.appendChild( elem2 );
+			
+				var multi = {
+					"array": [ elem2, elem ],
+					"object": { "0": elem2, "1": elem, length: 2 }
+				};
+			
+				checkNodeList( type, multi, [ elem, elem2 ] );
+			});
+			
+			// Test NodeLists that have multiple unsorted elements and text nodes with duplicates
+			group("Multiple Unsorted Elements with Duplicates", function() {
+				var div = document.createElement("div"),
+					elem = document.createElement("span"),
+					elem2 = document.createTextNode("test2");
+			
+				div.appendChild( elem );
+				div.appendChild( elem2 );
+			
+				var multi = {
+					"array": [ elem2, elem, elem2, elem ],
+					"object": { "0": elem2, "1": elem, "2": elem2, "3": elem, length: 4 }
+				};
+			
+				checkNodeList( type, multi, [ elem, elem2 ] );
+			});
+			
+			function checkNodeList( type, props, check ) {
+				var list;
+				
+				for ( var name in props ) {
+					try {
+						list = props[name] ? root.createNodeList( props[name] ) : root.createNodeList();
+					} catch(e){
+						assert( false, type + ".createNodeList(" + name + ") failed: " + e.message );
+						continue;
+					}
+					
+					assert( !!list, type + ".createNodeList(" + name + ") creates something." );
+					assert( typeof list === "object", type + ".createNodeList(" + name + ") gives an object." );
+					assert( list.nodeType === Node.NODELIST_NODE, type + ".createNodeList(" + name + ") returns a NodeList." );
+					assert( list.length === check.length, type + ".createNodeList(" + name + ") gives a NodeList with a correct length." );
+					assert( list.parentNodeList === root, type + ".createNodeList(" + name + ") has a correct parentNodeList set." );
+					for ( var i = 0; i < check.length; i++ ) {
+						assert( list[i] === check[i], type + ".createNodeList(" + name + ")[" + i + "] has the right node in it." );
+					}
+					assert( typeof list[check.length] === "undefined", type + ".createNodeList(" + name + ") has no additional nodes." );
+				}
+			}
+
+			// To check:
+			// Container: array, object, nodelist, htmlcollection
+			// Number: None, One, Few
+			// Contents: element, text node, mixture of element/text node
+			//           Error: null, undefined, object, fake dom node, extra dom node
+			// (nodeA,nodeB) (nodeB,nodeA)
+			// (disconnectA, disconnectB) (disconnectB, disconnectA)
+			// (nodeA,disconnectA) (disconnectA,nodeA) (nodeB,disconnectA,nodeA)
+			// (disAA, disBA) (disAB, disBB, disAA, disBA)
+			// TEST UNIQUE
+		}
+		
+		group("Array Extras", function() {
+			var div = document.createElement("div"),
+				elem = document.createElement("div"),
+				elem2 = document.createElement("span"),
+				extraParent = document.createElement("div"),
+				extra = document.createElement("strong");
+			
+			nodeList = div.childNodes;
+			
+			div.appendChild( elem );
+			div.appendChild( elem2 );
+			
+			extraParent.appendChild( extra );
+			
+			group("slice", function() {
+				checkArray( "slice", [ 0 ], [ elem, elem2 ] );
+				checkArray( "slice", [ 1 ], [ elem2 ] );
+				checkArray( "slice", [ -1 ], [ elem2 ] );
+				checkArray( "slice", [ 0, -1 ], [ elem ] );
+			});
+			
+			group("filter", function() {
+				checkArray( "filter", [ function(item){ return true; } ], [ elem, elem2 ] );
+				checkArray( "filter", [ function(item){ return false; } ], [ ] );
+				checkArray( "filter", [ function(item){ return null; } ], [ ] );
+				checkArray( "filter", [ function(item){ return undefined; } ], [ ] );
+				
+				var num = 0;
+				emptyNodeList.filter(function(){ num++; });
+				assert( num === 0, ".filter() on empty NodeList." );
+				
+				num = 0;
+				emptyCollection.filter(function(){ num++; });
+				assert( num === 0, ".filter() on empty HTMLCollection." );
+			});
+			
+			group("indexOf", function() {
+				checkArray( "indexOf", [ elem ], 0 );
+				checkArray( "indexOf", [ elem2 ], 1 );
+				checkArray( "indexOf", [ extra ], -1 );
+				
+				assert( emptyNodeList.indexOf( elem ) === -1, ".indexOf() on empty NodeList." );
+				assert( emptyCollection.indexOf( elem ) === -1, ".indexOf() on empty HTMLCollection." );
+			});
+			
+			group("lastIndexOf", function() {
+				checkArray( "lastIndexOf", [ elem ], 0 );
+				checkArray( "lastIndexOf", [ elem2 ], 1 );
+				checkArray( "lastIndexOf", [ extra ], -1 );
+				
+				assert( emptyNodeList.lastIndexOf( elem ) === -1, ".lastIndexOf() on empty NodeList." );
+				assert( emptyCollection.lastIndexOf( elem ) === -1, ".lastIndexOf() on empty HTMLCollection." );
+			});
+			
+			group("reduce", function() {
+				checkArray( "reduce", [ function(prev, cur, index){ return prev + index; }, 5 ], 6 );
+				
+				num = 0;
+				assert( emptyNodeList.reduce(function(){ num++; }, 0) === 0, ".reduce() on empty NodeList." );
+				assert( num === 0, "No looping was done." );
+
+				num = 0;
+				assert( emptyCollection.reduce(function(){ num++; }, 0) === 0, ".reduce() on empty HTMLCollection." );
+				assert( num === 0, "No looping was done." );
+			});
+			
+			group("reduceRight", function() {
+				checkArray( "reduceRight", [ function(prev, cur, index){ return prev + index; }, 5 ], 6 );
+				
+				num = 0;
+				assert( emptyNodeList.reduceRight(function(){ num++; }, 0) === 0, ".reduceRight() on empty NodeList." );
+				assert( num === 0, "No looping was done." );
+
+				num = 0;
+				assert( emptyCollection.reduceRight(function(){ num++; }, 0) === 0, ".reduceRight() on empty HTMLCollection." );
+				assert( num === 0, "No looping was done." );
+			});
+
+			group("some", function() {
+				checkArray( "some", [ function(val, pos, all){ return pos === 1; } ], true );
+				checkArray( "some", [ function(val, pos, all){ return false; } ], false );
+				checkArray( "some", [ function(val, pos, all){ return true; } ], true );
+				
+				num = 0;
+				assert( emptyNodeList.some(function(){ num++; }) === false, ".some() on empty NodeList." );
+				assert( num === 0, "No looping was done." );
+
+				num = 0;
+				assert( emptyCollection.some(function(){ num++; }) === false, ".some() on empty HTMLCollection." );
+				assert( num === 0, "No looping was done." );
+			});
+
+			group("every", function() {
+				checkArray( "every", [ function(val, pos, all){ return pos === 1; } ], false  );
+				checkArray( "every", [ function(val, pos, all){ return false; } ], false );
+				checkArray( "every", [ function(val, pos, all){ return true; } ], true );
+				
+				num = 0;
+				assert( emptyNodeList.every(function(){ num++; }) === true, ".every() on empty NodeList." );
+				assert( num === 0, "No looping was done." );
+
+				num = 0;
+				assert( emptyCollection.every(function(){ num++; }) === true, ".every() on empty HTMLCollection." );
+				assert( num === 0, "No looping was done." );
+			});
+			
+			group("map", function() {
+				checkArray( "map", [ function(item){ return item.parentNode; } ], [ div ] );
+				checkArray( "map", [ function(item, pos){ return pos === 1 ? item : null; } ], [ elem2 ] );
+				checkArray( "map", [ function(item){ return null; } ], [ ] );
+				checkArray( "map", [ function(item){ return undefined; } ], [ ] );
+				
+				num = 0;
+				emptyNodeList.map(function(){ num++; });
+				assert( num === 0, ".map() on empty NodeList." );
+				
+				num = 0;
+				emptyCollection.forEach(function(){ num++; });
+				assert( num === 0, ".map() on empty HTMLCollection." );
+			});
+			
+			group("forEach", function() {
+				var num = 0;
+				
+				var ret = nodeList.forEach(function( item, pos ) {
+					assert( item === (pos === 0 ? elem : pos === 1 ? elem2 : undefined),
+						".forEach() verify the element in position " + pos + "." );
+						
+					num++;
+				});
+				
+				assert( num === 2, ".forEach() loops over the correct number of elements." );
+				assert( ret === nodeList, ".forEach() returns the NodeList." );
+				
+				num = 0;
+				emptyNodeList.forEach(function(){ num++; });
+				assert( num === 0, ".forEach() on empty NodeList." );
+				
+				num = 0;
+				emptyCollection.forEach(function(){ num++; });
+				assert( num === 0, ".forEach() on empty HTMLCollection." );
+			});
+			
+			group("concat", function() {
+				checkArray( "concat", [ [ extra ] ], [ elem, elem2, extra ] );
+				checkArray( "concat", [ [ elem ] ], [ elem, elem2 ] );
+				checkArray( "concat", [ { "0": extra, "length": 1 } ], [ elem, elem2, extra ] );
+				checkArray( "concat", [ extraParent.childNodes ], [ elem, elem2, extra ] );
+				checkArray( "concat", [ extraParent.children ], [ elem, elem2, extra ] );
+				
+				var old = nodeList;
+				
+				nodeList = emptyNodeList;
+				
+				checkArray( "concat", [ [ extra ] ], [ extra ] );
+				checkArray( "concat", [ [ elem2, elem ] ], [ elem, elem2 ] );
+				checkArray( "concat", [ { "0": extra, "length": 1 } ], [ extra ] );
+				checkArray( "concat", [ extraParent.childNodes ], [ extra ] );
+				checkArray( "concat", [ extraParent.children ], [ extra ] );
+				
+				nodeList = emptyCollection;
+				
+				checkArray( "concat", [ [ extra ] ], [ extra ] );
+				checkArray( "concat", [ [ elem2, elem ] ], [ elem, elem2 ] );
+				checkArray( "concat", [ { "0": extra, "length": 1 } ], [ extra ] );
+				checkArray( "concat", [ extraParent.childNodes ], [ extra ] );
+				checkArray( "concat", [ extraParent.children ], [ extra ] );
+				
+				nodeList = old;
+			});
+		});
+		
+		group("Selectors API", function() {
+			
+			// querySelectorAll
+			// queryScopedSelectorAll
+			// matchesSelector
+			// filterSelector
+			
+			group("querySelectorAll", function() {
+				
+				
+			});
+			
+		});
+		
+		group("Events API", function() {
+			// addEventListener
+			// removeEventListener
+			// dispatchEvent
+			
+		});
+		
+		group("Live Update", function() {
+			// requery()
+			// added / removed
+
+
+			// slice
+			// concat
+			// qSA
+			// Make sure secure stays the same (?)
+
+			group("requery", function() {
+
+				group("map", function() {
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.map(function( elem ) {
+						return elem.nextSibling;
+					});
+
+					checkArray( next, [ nodeList[1] ] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+
+					checkArray( next, [ nodeList[1] ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[1] ] );
+					checkArray( re, [ nodeList[1], nodeList[2] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.map(function( elem ) {
+						return elem.nextSibling;
+					}).map(function( elem ) {
+						return elem.previousSibling;
+					});
+
+					checkArray( next, [ nodeList[0] ] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+					checkArray( next, [ nodeList[0] ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[0] ] );
+					checkArray( re, [ nodeList[0], nodeList[1] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+				});
+
+				group("filter", function() {
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.filter(function( elem ) {
+						return elem.nextSibling;
+					});
+
+					checkArray( next, [ nodeList[0] ] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+					checkArray( next, [ nodeList[0] ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[0] ] );
+					checkArray( re, [ nodeList[0], nodeList[1] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.filter(function( elem ) {
+						return elem.nextSibling;
+					}).filter(function( elem ) {
+						return elem.previousSibling;
+					});
+
+					checkArray( next, [] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+					checkArray( next, [] );
+
+					var re = next.requery();
+
+					checkArray( next, [] );
+					checkArray( re, [ nodeList[1] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+				});
+				
+				group("slice", function() {
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.slice(1);
+
+					checkArray( next, [ nodeList[1] ] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+
+					checkArray( next, [ nodeList[1] ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[1] ] );
+					checkArray( re, [ nodeList[1], nodeList[2] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.slice(1).slice(0);
+
+					checkArray( next, [ nodeList[1] ] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+					checkArray( next, [ nodeList[1] ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[1] ] );
+					checkArray( re, [ nodeList[1], nodeList[2] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+				});
+				
+				group("concat", function() {
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var next = nodeList.concat( [] );
+
+					checkArray( next, [ nodeList[0], nodeList[1] ] );
+
+					nodeList[0].parentNode.appendChild( document.createElement("span") );
+
+					assert( nodeList.length === 3, "Verify new length." );
+
+					checkArray( next, [ nodeList[0], nodeList[1] ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[0], nodeList[1] ] );
+					checkArray( re, [ nodeList[0], nodeList[2], nodeList[1] ] );
+
+					nodeList[0].parentNode.removeChild( nodeList[0].parentNode.lastChild );
+
+					assert( nodeList.length === 2, "Verify starting length." );
+
+					var elem = document.createElement("span"),
+						elem2 = document.createElement("span");
+					
+					document.body.appendChild( elem2 );
+					
+					var next = nodeList.concat([]).concat([ elem2 ]);
+
+					checkArray( next, [ nodeList[0], nodeList[1], elem2 ] );
+
+					nodeList[0].parentNode.appendChild( elem );
+
+					assert( nodeList.length === 3, "Verify new length." );
+					checkArray( next, [ nodeList[0], nodeList[1], elem2 ] );
+
+					var re = next.requery();
+
+					checkArray( next, [ nodeList[0], nodeList[1], elem2 ] );
+					checkArray( re, [ nodeList[0], nodeList[2], nodeList[1], elem2 ] );
+					
+					console.log( re );
+
+					nodeList[0].parentNode.removeChild( elem );
+					document.body.removeChild( elem2 );
+				});
+
+			});
+			
+		});
+		
+		group("Secure", function() {
+			var oldNodeList = nodeList;
+			nodeList = nodeList.secure();
+
+			// slice
+			group("slice", function() {
+				var test = nodeList.slice( 0 );
+
+				assert( test[0] === null, "Verify first element is null." );
+				assert( test[1] === null, "Verify second element is null." );
+				assert( test.length === 2, "Verify counter position." );
+			});
+
+			// filter
+			group("filter", function() {
+				var cur = 0;
+
+				checkArray( "filter", [ function( elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur++, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+
+					return true;
+				} ], [ null, null ] );
+
+				assert( cur === nodeList.length, "Full iteration done." );
+			});
+
+			// reduce
+			group("reduce", function() {
+				var cur = 1;
+
+				checkArray( "reduce", [ function( prev, elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur++, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+
+					return pos;
+				} ], 1 );
+
+				assert( cur === nodeList.length, "Full iteration done." );
+			});
+
+			// reduceRight
+			group("reduceRight", function() {
+				var cur = 0;
+
+				checkArray( "reduceRight", [ function( prev, elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur--, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+
+					return pos;
+				} ], 0 );
+
+				assert( cur === -1, "Full iteration done." );
+			});
+
+			// some
+			group("some", function() {
+				var cur = 0;
+
+				checkArray( "some", [ function( elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur++, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+
+					return false;
+				} ], false );
+
+				assert( cur === nodeList.length, "Full iteration done." );
+			});
+
+			// every 
+			group("every", function() {
+				var cur = 0;
+
+				checkArray( "every", [ function( elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur++, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+
+					return true;
+				} ], true );
+
+				assert( cur === nodeList.length, "Full iteration done." );
+			});
+
+			// map
+			group("map", function() {
+				var cur = 0;
+
+				checkArray( "map", [ function( elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur++, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+
+					return true;
+				} ], [] );
+
+				assert( cur === nodeList.length, "Full iteration done." );
+			});
+
+			group("forEach", function() {
+				var cur = 0;
+
+				checkArray( "forEach", [ function( elem, pos, all ) {
+					assert( elem === null, "Verify that element is null." );
+					assert( pos === cur++, "Verify counter position." );
+					assert( all === nodeList, "Verify nodeList is secured." );
+				} ], nodeList );
+
+				assert( cur === nodeList.length, "Full iteration done." );
+			});
+
+			// concat
+			group("concat", function() {
+				var test = nodeList.concat( [ document.body ] );
+
+				assert( test[0] === null, "Verify first element is null." );
+				assert( test[1] === null, "Verify second element is null." );
+				assert( test[2] === null, "Verify third element is null." );
+				assert( test.length === 3, "Verify counter position." );
+
+				var test = nodeList.concat( nodeList.slice(0) );
+
+				assert( test[0] === null, "Verify first element is null." );
+				assert( test[1] === null, "Verify second element is null." );
+				assert( test.length === 2, "Verify counter position." );
+			});
+
+			nodeList = oldNodeList;
+		});
+
+		done();
+		
+		function checkArray( method, args, check ) {
+			if ( arguments.length === 2 && typeof method !== "string" ) {
+				var list = method, prefix = "", pnodeList = list.parentNodeList;
+				check = args;
+
+			} else { 
+				var list, prefix = "." + method + "(" + args + ") ", pnodeList = nodeList;
+			
+				try {
+					list = nodeList[ method ].apply( nodeList, args );
+				} catch(e){
+					assert( false, prefix + "failed: " + e.message );
+					return;
+				}
+			}
+			
+			if ( check instanceof Array ) {
+				assert( !!list, prefix + "creates something." );
+				assert( typeof list === "object", prefix + "gives an object." );
+				assert( list !== nodeList, prefix + "is not the same as the original NodeList." );
+				assert( list.nodeType === Node.NODELIST_NODE, prefix + "returns a NodeList." );
+				assert( list.parentNodeList === pnodeList, prefix + "has a correct parentNodeList set." );
+			
+				if ( !list.secured ) {	
+					for ( var i = 0; i < check.length; i++ ) {
+						assert( list[i] === check[i], prefix + "[" + i + "] has the right node in it." );
+					}
+				}
+
+				assert( list.length === check.length, prefix + "gives a NodeList with a correct length." );
+				assert( typeof list[check.length] === "undefined", prefix + "has no additional nodes." );
+			
+			} else {
+				assert( list === check, prefix + "has the correct return value." );
+
+				if ( list && list.parentNodeList ) {
+					assert( list.parentNodeList === (list.secured ? null : nodeList), prefix + "has a correct parentNodeList set." );
+				}
+			}
+		}
+
+		function done() {
+			var r = document.getElementById("results");
+			var li = document.createElement("div");
+			li.className = "score";
+			var b = document.createElement("b");
+			b.appendChild( document.createTextNode( ((passed / tests) * 100).toFixed(1) + "%" ) );
+			li.appendChild( b );
+			li.appendChild( document.createTextNode( ": " + passed + " passed, " + (tests - passed) + " failed" ) );
+			r.insertBefore( li, r.firstChild );
+
+			document.documentElement.style.backgroundColor = (tests > passed ? "red" : "green");
+		}
+		
+		function group(title, fn) {
+			var prev = insert,
+				li = document.createElement("li"),
+				b = document.createElement("b");
+			
+			b.appendChild( document.createTextNode( title ) );
+			li.appendChild( b );
+			li.appendChild( document.createElement("ol") );
+			insert.appendChild( li );
+			insert = li.lastChild;
+			
+			try {
+				fn();
+			} catch(e) {
+				assert( false, "Test failure: " + e.message );
+			}
+			
+			insert = prev;
+		}
+
+		function assert(pass, title) {
+			tests++;
+			passed += (pass ? 1 : 0);
+			pass = !pass ? "FAIL" : "PASS";
+			
+			var li = document.createElement("li");
+			li.className = (pass === "FAIL" ? "fail" : "pass");
+			var span = document.createElement("span");
+			span.style.color = (pass === "FAIL" ? "red" : "green");
+			span.appendChild( document.createTextNode( pass ) );
+			li.appendChild( span );
+			li.appendChild( document.createTextNode( " " + title ) );
+			insert.appendChild( li );
+		}
+	};
+  </script>
+</head>
+<body>
+<h1><a href="http://nodelist.org/">NodeList</a> Test Suite</h1>
+<p>Testrunner by <a href="http://ejohn.org/">John Resig</a>.</p>
+<p><label><input type="checkbox" id="toggle"/> Show only failing tests.</label></p>
+<ol id="results"></ol>
+</body>
+</html>
