@@ -23,9 +23,10 @@ Add a new nodeType for NodeLists. Additionally expose this as a property of Node
 
 Returns a NodeList, contains nothing but nodes, any non-nodes are discarded. Any nodes coming from an external document are discarded. All nodes are sorted in document order with duplicates removed. Additionally all NodeLists created with this method are static as a result.
 
-	document.createNodeList( document.documentElement.childNodes ) // Live NodeList
-	document.createNodeList( document.getElementsByTagName("div") ) // HTMLCollection
-	document.createNodeList( document.querySelectorAll("div" ) ) // Static NodeList
+	// All return a static NodeList
+	document.createNodeList( document.documentElement.childNodes )
+	document.createNodeList( document.getElementsByTagName("div") )
+	document.createNodeList( document.querySelectorAll("div" ) )
 	document.createNodeList( [ document.body ] )
 	document.createNodeList( { "0": document.body, length: 1 } )
 	document.createNodeList() // .length = 0
