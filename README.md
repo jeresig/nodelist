@@ -1,5 +1,17 @@
 # NodeList API Proposal
 
+This is a proposal (together with a pure-JavaScript sample implementation and test suite) to improve the DOM's built-in NodeLists, making them dramatically more useful to library developers and endusers.
+
+The proposal is created by <a href="http://ejohn.org/">John Resig</a> and more details can be found at: <a href="http://nodelist.org/">http://nodelist.org/</a>.
+
+## NodeList nodeType
+
+Add a new nodeType for NodeLists. Additionally expose this as a property of Node.
+
+	Node.NODELIST_NODE === document.body.childNodes.nodeType
+
+**Status:** Standards-compatible sample implementation exists along with tests.
+
 ## document.createNodeList( ArrayLikeObjectOfNodes )
 
 Returns a NodeList, contains nothing but nodes, any non-nodes are discarded. Any nodes coming from an external document are discarded. All nodes are sorted in document order with duplicates removed. Additionally all NodeLists created with this method are static as a result.
@@ -45,7 +57,16 @@ OR just kill off HTMLCollection in favor of NodeList. (Currently HTMLCollection 
 
 **Status:** Standards-compatible sample implementation exists along with tests.
 
-## NodeList implements the NodeSelector interface
+## .toArray()
+
+Returns a plain JavaScript array containing all the nodes within the NodeList.
+
+	var elems = document.body.childNodes.toArray();
+	elems.push( document.body );
+
+**Status:** Standards-compatible sample implementation exists along with tests.
+
+## NodeList implements the <a href="http://www.w3.org/TR/selectors-api/#nodeselector">NodeSelector interface</a>
 
 (NodeList gets querySelectorAll, queryScopedSelector, and matchesSelector.)
 
@@ -65,7 +86,7 @@ Returns a NodeList that is filtered by the selector. Equivalent to doing:
 
 **Status:** Sample implementation exists along with tests.
 
-## NodeList implements the EventTarget interface
+## NodeList implements the <a href="http://www.w3.org/TR/DOM-Level-2-Events/events.html#Events-Registration-interfaces">EventTarget interface</a>
 
 (NodeList gets addEventListener, removeEventListener, and dispatchEvent.)
 
@@ -189,6 +210,8 @@ Note that all the NodeList methods provided by the useragent still have access t
 **Status:** Standards-compatible sample implementation exists along with tests.
 
 # Also: Fix the Selectors API
+
+These are additional changes that are being proposed for the <a href="http://www.w3.org/TR/selectors-api2/">second version of the Selectors API</a>.
 
 ## .matchesSelector( selector )
 
