@@ -7,6 +7,8 @@ You can run the NodeList API test suite here (1000+ tests):
 
 **Note:** So far testing has only been done in Firefox, Chrome, and Safari.
 
+**Note:** This proposal only specifies the bare minimum required for developers to work to build a larger and more usable DOM API. It's hoped that in getting this core API out there and agreed upon by useragents we can move forward towards a larger and more comprehensive API for endusers.
+
 The proposal is created by <a href="http://ejohn.org/">John Resig</a> and more details can be found at: <a href="http://nodelist.org/">http://nodelist.org/</a>.
 
 ## NodeList nodeType
