@@ -1,3 +1,12 @@
+/*
+ * NodeList API Sample Implementation
+ *  By John Resig <jresig@mozilla.com>
+ * 
+ * More Information:
+ * http://nodelist.org/
+ *
+ * Released under the MIT license.
+ */
 (function() {
 	if ( document.createNodeList ) {
 		return;
