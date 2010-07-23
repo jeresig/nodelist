@@ -2,6 +2,11 @@
 
 This is a proposal (together with a pure-JavaScript sample implementation and test suite) to improve the DOM's built-in NodeLists, making them dramatically more useful to library developers and endusers.
 
+You can run the NodeList API test suite here (1000+ tests):
+<a href="http://nodelist.org/test/">http://nodelist.org/test/</a>
+
+**Note:** So far testing has only been done in Firefox, Chrome, and Safari.
+
 The proposal is created by <a href="http://ejohn.org/">John Resig</a> and more details can be found at: <a href="http://nodelist.org/">http://nodelist.org/</a>.
 
 ## NodeList nodeType
@@ -181,7 +186,7 @@ This is a replacement for DOM mutation events and <a href="http://www.w3.org/200
 
 **Discussion:** This particular solution is much more powerful than the the current DOM mutation events specified in browsers and doesn't block execution flow. Granted the additional asynchronous execution of JavaScript may cause additional overhead in applications that may be difficult to quantify.
 
-Status: This is an open proposal and further discussion is warranted.
+**Status:** This is an open proposal and further discussion is warranted.
 
 ## Security: .secure()
 
